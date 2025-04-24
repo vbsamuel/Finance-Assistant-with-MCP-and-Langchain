@@ -102,6 +102,277 @@ The system utilizes a decoupled client-server architecture orchestrated by the L
 20. A separate OpenAI call generates follow-up suggestions.
 21. Suggestions are displayed as buttons.
 
+
+
+
+## 4. MCP Server Design
+
+### 4.1 Implementation with FastMCP
+
+The MCP server is implemented using the FastMCP framework in Python. It defines tools and resources using decorators:
+
+- `@mcp.tool`: Defines functions that perform actions, such as retrieving stock prices.
+- `@mcp.resource`: Defines functions that provide data resources, like news articles.
+
+**Example:**
+
+```python
+from fastmcp import MCP
+
+mcp = MCP()
+
+@mcp.tool()
+def get_stock_price(symbol: str) -> dict:
+    """Fetches the current stock price for a given symbol."""
+    # Logic to interact with external API
+    return {"symbol": symbol, "price": 100.0}
+```
+
+
+This setup abstracts the complexity of external APIs, providing a standardized interface for the frontend to interact with.
+
+### 4.2 Security and Abstraction
+
+By centralizing API interactions within the MCP server:
+
+- **API Keys Protection:** Sensitive credentials are kept secure on the server side.
+- **Simplified Frontend:** The frontend does not need to handle API-specific logic.
+- **Ease of Maintenance:** Updates to API interactions are confined to the server, without affecting the frontend.
+
+---
+
+## 5. Langchain Agent Design
+
+### 5.1 Agent Configuration
+
+The Langchain agent is configured using the `create_openai_tools_agent` function, integrating various tools defined as StructuredTool instances. Each tool corresponds to a specific function that interacts with the MCP server.
+
+**Example:**
+
+```python
+from langchain.agents import create_openai_tools_agent
+from langchain.tools import StructuredTool
+
+def fetch_stock_price(symbol: str) -> str:
+    # Logic to call MCP client and retrieve stock price
+    return f"The current price of {symbol} is $100.0."
+
+get_price_tool = StructuredTool.from_function(
+    func=fetch_stock_price,
+    name="get_price",
+    description="Fetches the current stock price for a given symbol."
+)
+
+agent = create_openai_tools_agent(
+    tools=[get_price_tool],
+    llm=llm_instance,
+    verbose=True
+)
+```
+
+
+This configuration allows the agent to decide when to invoke tools based on user input.
+
+### 5.2 Memory and Prompting
+
+ 
+
+### 5.2 Memory and Prompting
+
+The Langchain agent employs sophisticated memory management and prompting strategies to facilitate effective, context-aware interactions with users:
+
+- **ConversationBufferWindowMemory**:  
+  - Retains a sliding window of recent interactions (e.g., the last 5 to 10 exchanges).
+  - Ensures relevant context is provided to the LLM, improving response accuracy while preventing memory overload.
+
+```python
+from langchain.memory import ConversationBufferWindowMemory
+
+memory = ConversationBufferWindowMemory(
+    k=5,  # Retain the last 5 interactions
+    memory_key="chat_history"
+)
+```
+
+- **Custom System Prompting**:
+  - Overrides the default Langchain prompts with tailored instructions that clearly define:
+    - The capabilities and constraints of available tools.
+    - The expected format of responses.
+    - How to gracefully handle out-of-scope or ambiguous requests.
+
+```python
+from langchain.prompts import ChatPromptTemplate, SystemMessagePromptTemplate
+
+system_message = SystemMessagePromptTemplate.from_template(
+    "You are a finance assistant capable of fetching real-time stock prices, news, and market movers. "
+    "If a query falls outside these capabilities, politely decline to respond."
+)
+
+prompt = ChatPromptTemplate.from_messages([system_message])
+```
+
+### 5.3 Error Handling and Robustness
+
+Robustness in agent-tool interactions is critical, and Langchain provides built-in mechanisms for handling errors gracefully:
+
+- **StructuredTool Configuration**:
+  - `handle_tool_error=True`: Ensures errors from MCP interactions or external APIs are captured, logged, and returned to the agent for intelligent handling.
+  - Error messages are formatted into user-friendly responses, improving transparency and user experience.
+
+```python
+stock_price_tool = StructuredTool.from_function(
+    func=fetch_stock_price,
+    args_schema=StockPriceSchema,
+    description="Fetches current stock prices.",
+    handle_tool_error=True
+)
+```
+
+### 5.4 Agent Executor
+
+The `AgentExecutor` class orchestrates the agent's workflow, encapsulating interactions between user inputs, LLM decisions, tool execution, and response synthesis:
+
+- **Verbose Logging**:
+  - Enabled for comprehensive debugging, tracking each decision made by the LLM and tool invocations.
+- **Async Invocation**:
+  - Uses `ainvoke()` for asynchronous, non-blocking interactions with the MCP server and external APIs, ensuring responsiveness.
+
+```python
+from langchain.agents import AgentExecutor
+
+agent_executor = AgentExecutor(
+    agent=agent,
+    tools=[stock_price_tool, news_tool, market_movers_tool],
+    memory=memory,
+    verbose=True,
+    handle_parsing_errors=True
+)
+
+response = await agent_executor.ainvoke(user_input)
+```
+
+---
+
+## 6. Integration Between Langchain Agent and MCP Server
+
+### 6.1 Interaction Flow
+
+The integration between the Langchain agent and the MCP server follows a clear interaction flow:
+
+1. **Intent Recognition**:  
+   - Langchain's LLM identifies user intent from natural language input.
+   
+2. **Structured Tool Invocation**:  
+   - Based on intent, the appropriate `StructuredTool` coroutine function is triggered.
+
+3. **MCP Client Communication**:  
+   - The structured tool communicates via the MCP client (`fastmcp.Client`), encapsulating all MCP interactions.
+
+```python
+from fastmcp import Client
+
+async def fetch_stock_price(symbol: str):
+    async with Client(base_url="http://mcp_server") as client:
+        response = await client.call("tools/get_stock_price", {"symbol": symbol})
+    return response
+```
+
+4. **MCP Server Request Handling**:  
+   - The MCP server receives the structured request, invokes the corresponding `@mcp.tool` or `@mcp.resource` endpoint, fetches external API data, validates responses, and returns results.
+
+```python
+@mcp.tool()
+def get_stock_price(symbol: str):
+    response = httpx.get(f"https://api.finnhub.io/.../quote?symbol={symbol}", headers={"X-API-Key": FINNHUB_API_KEY})
+    validated_data = StockQuote(**response.json())
+    return validated_data.dict()
+```
+
+5. **Data Formatting**:  
+   - The MCP client retrieves the MCP server's response, formats it into structured markdown or JSON, and provides it to the Langchain agent.
+
+6. **Response Synthesis**:  
+   - The Langchain agent receives the formatted data, synthesizes a natural language response via the LLM, and returns it to the user via the UI.
+
+### 6.2 Key Integration Considerations
+
+- **Consistency in Data Formats**:  
+  - Ensure all structured tools follow consistent input/output schemas (defined via Pydantic models).
+  - Facilitates easier validation and error handling.
+
+- **Error Transparency**:  
+  - Transparently pass errors from the MCP server through the Langchain agent, enabling meaningful user communication and debugging.
+
+- **Scalability and Extensibility**:  
+  - Maintain clear modularity and separation between frontend (agent) logic and backend (MCP) API handling.
+  - Simplifies future expansions or adjustments (new APIs, additional tools/resources).
+
+---
+
+## 7. Demonstration Outcomes and Analysis
+
+### 7.1 Successful Demonstrations
+
+The MVP effectively demonstrates:
+
+- **Secure and Abstracted API Management**:
+  - API keys and complex interactions are secured within the MCP server, completely abstracted from frontend tools.
+  
+- **Conversational AI Integration**:
+  - Seamless, intuitive interaction via the Langchain agent interface, enhancing user accessibility and engagement.
+
+- **Robust Error Handling and User Experience**:
+  - User interactions gracefully handle errors, providing clear, actionable feedback.
+
+### 7.2 Analysis and Limitations
+
+- **Performance and Latency**:
+  - Minor latency observed in async interactions, typically due to external API responsiveness.
+  
+- **Data Source Reliability**:
+  - Dependency on third-party financial APIs (Finnhub, Alpha Vantage) introduces potential points of failure, requiring robust error handling.
+
+- **Scalability Evaluation**:
+  - Architecture supports horizontal scaling (multiple MCP servers) and vertical extension (additional tools/resources).
+
+---
+
+## 8. Conclusion and Future Roadmap
+
+The integration of the Model Context Protocol (MCP) with Langchain significantly simplifies the development of secure, scalable, and robust conversational financial assistants. This MVP establishes a strong architectural foundation for further enhancements, including:
+
+- **Expanded Financial Capabilities**: Incorporating additional financial data sources, predictive analytics, and market sentiment analysis.
+- **Enhanced User Experience**: Advanced conversational capabilities, personalized financial insights, and richer interaction models.
+- **Deployment Improvements**: Leveraging Docker and container orchestration (e.g., Kubernetes) for high-availability production deployment.
+
+This MVP demonstrates the feasibility and potential of MCP-Langchain integrations for complex, real-world AI applications, setting the stage for further innovation and enhancements in conversational AI solutions.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 **4. Component Implementation Details**
 
 **4.1. Finance MCP Server (`fin_server_v2.py`)**
