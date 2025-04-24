@@ -5,7 +5,10 @@
 
 **1. Abstract**
 
-This report details the architecture, design, and implementation of a conversational financial assistant. The system enables users to retrieve real-time stock price quotes, news headlines, and market mover data through a natural language interface. The architecture employs a decoupled design: a secure backend server built with the **FastMCP framework** acts as a standardized gateway to external financial APIs (Finnhub, Alpha Vantage), while a **Streamlit frontend UI** integrates a **Langchain OpenAI Tools agent**. This agent interprets user requests, selects appropriate capabilities exposed by the MCP server (via defined Langchain tools), orchestrates data retrieval through **FastMCP client** calls, and synthesizes conversational responses. The report highlights the strategic benefits derived from using the Model Context Protocol (MCP) architecture, explains key implementation details of the agent-MCP integration, proposes a reusable design pattern, and discusses challenges encountered.
+The primary goal of this project is to develop a conversational finance assistant that provides users with real-time stock quotes, market news, and insights on market movers through natural language interactions. The system is designed as a Minimum Viable Product (MVP) to demonstrate the integration of the Model Context Protocol (MCP) for secure and standardized backend API interactions, and Langchain for frontend agent orchestration.
+The architecture employs a decoupled design: a secure backend server built with the **FastMCP framework** acts as a standardized gateway to external financial APIs (Finnhub, Alpha Vantage), while a **Streamlit frontend UI** integrates a **Langchain OpenAI Tools agent**. This agent interprets user requests, selects appropriate capabilities exposed by the MCP server (via defined Langchain tools), orchestrates data retrieval through **FastMCP client** calls, and synthesizes conversational responses. The report highlights the strategic benefits derived from using the Model Context Protocol (MCP) architecture, explains key implementation details of the agent-MCP integration, proposes a reusable design pattern, and discusses challenges encountered.
+
+
 
 **2. Introduction**
 
@@ -17,7 +20,32 @@ Accessing diverse, real-time financial data often requires integrating multiple,
 
 To develop a system allowing conversational querying of real-time stock prices, news, and market movers, leveraging the strengths of LLMs for understanding and FastMCP for secure, abstracted data access.
 
-**2.3. Why MCP? (Benefits & Rationale)**
+**2.3. Challenges Addressed:** 
+- Secure API Management: Safeguarding sensitive API keys and credentials.
+- Standardized Integration: Reducing the complexity of integrating multiple AI applications with various tools and data sources.
+- Modular Architecture: Facilitating easy maintenance and scalability.
+- Enhanced User Experience: Providing intuitive, conversational access to financial data.
+
+
+**3. Overview of the Model Context Protocol (MCP)**
+
+**3.1 What is MCP?**
+
+The Model Context Protocol (MCP) is an open standard developed by Anthropic to standardize how AI applications connect with external tools, data sources, and systems. It transforms the traditional M×N integration problem—where M AI applications need to integrate with N tools, requiring M×N custom integrations—into a more manageable M+N problem. This is achieved by establishing a common protocol where:
+- Hosts: AI applications (e.g., chatbots, IDE assistants) that users interact with.
+- Clients: Components within the host applications that manage connections to MCP servers.
+- Servers: External programs exposing tools, resources, and prompts via a standardized API.
+This architecture allows for modular, scalable, and secure integration between AI applications and external systems. 
+
+**3.2 Core Components of MCP**
+- Tools (Model-controlled): Functions that AI models can invoke to perform specific actions, such as fetching stock prices.
+- Resources (Application-controlled): Data sources that AI models can access, akin to RESTful GET endpoints.
+- Prompts (User-controlled): Predefined templates guiding the AI's interactions with tools and resources.
+
+These components enable a structured and efficient interaction between AI models and external systems.
+
+
+**3.3. Why MCP? (Benefits & Rationale)**
 
 The Model Context Protocol (MCP) was chosen for the backend interface, aligning with principles often highlighted in MCP introductions:
 - **Standardization:** MCP provides a common "language"  for the frontend agent to interact with backend capabilities, regardless of whether the data comes from Finnhub, Alpha Vantage, or future sources. The agent interacts with consistent MCP tools/resources (`get_price`, `news://...`), not specific vendor APIs.
@@ -26,10 +54,10 @@ The Model Context Protocol (MCP) was chosen for the backend interface, aligning 
 - **Discoverability (Potential):** While not explicitly used by the Langchain agent in this implementation (as tools were predefined), MCP allows clients to dynamically query a server's capabilities (`listTools`, `listResources`), enabling more flexible agent interactions in other scenarios.
 - **Control & Ownership:** The owner of the MCP server maintains full control over the exposed tools, data transformations, and API interactions.
 
-**2.4. Technology Stack:**
+**3.4. Technology Stack:**
 - **Backend Server:** Python 3.10+, FastMCP (`fin_server_v2.py`).
 - **Financial Data APIs:** Finnhub, Alpha Vantage.
-- **Frontend UI:** Python 3.10+, Streamlit (`finance_assistant_ui.py`)
+- **Frontend UI:** Python 3.10+, Streamlit (`fin_langchain_v2.py`)
 - **Agent Framework:** Langchain (`langchain`, `langchain-openai`, `langchainhub`)
 - **LLM:** OpenAI API (`gpt-4-turbo-preview`) via `langchain-openai`
 - **MCP Client:** `fastmcp.Client`.
@@ -37,14 +65,20 @@ The Model Context Protocol (MCP) was chosen for the backend interface, aligning 
 
 **3. System Architecture**
 
+**3.1 High-Level Architecture**
+The system is divided into two main components:
+- Frontend: A Streamlit-based UI employing Langchain to manage user interactions and orchestrate tool usage.
+- Backend: A FastMCP server handling secure API interactions with external financial data providers like Finnhub and Alpha Vantage.
+
+This separation ensures modularity, security, and ease of maintenance.
+
 The system utilizes a decoupled client-server architecture orchestrated by the Langchain agent within the Streamlit UI.
 
 
+
+
+**3.2 Data Flow:**
 <img src="https://github.com/Pyligent/Finance-Assistant-with-MCP-and-Langchain/raw/main/dataflow.jpg" alt="dataflow" width="1800">
-
-
-
-**Flow:**
 
 1.  User query enters Streamlit UI.
 2.  UI adds query to history and invokes the **Langchain Agent Executor**.
