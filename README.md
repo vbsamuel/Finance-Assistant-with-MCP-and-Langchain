@@ -100,7 +100,7 @@ You need to run the backend MCP server and the frontend Streamlit UI separately.
 2.  **Run the Frontend Streamlit UI:**
     Open a *second* terminal window, activate the *same* virtual environment, and run:
     ```bash
-    streamlit run finance_assistant_ui.py
+    streamlit run fin_langchain_v2.py
     ```
     Streamlit will provide a local URL (usually `http://localhost:8501`). Open this URL in your web browser.
 
@@ -109,7 +109,7 @@ You need to run the backend MCP server and the frontend Streamlit UI separately.
 ## Code Structure
 
 *   `fin_server_v2.py`: The backend FastMCP server application. Contains tool and resource definitions, interacts with financial APIs.
-*   `finance_assistant_ui.py`: The frontend Streamlit application. Contains the Langchain agent setup, UI components, and helper functions to call the MCP server.
+*   `fin_langchain_v2.py`: The frontend Streamlit application. Contains the Langchain agent setup, UI components, and helper functions to call the MCP server.
 *   `.env` (You create this): Stores API keys securely.
 *   `requirements.txt` (You create this or use the one provided): Lists Python dependencies.
 
