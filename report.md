@@ -10,32 +10,35 @@ This report details the architecture, design, and implementation of a conversati
 **2. Introduction**
 
 **2.1. Problem Statement:**
+
 Accessing diverse, real-time financial data often requires integrating multiple, disparate APIs with varying authentication and data formats. Creating a user-friendly, conversational interface for this data necessitates robust natural language understanding and secure, standardized access to backend resources.
 
 **2.2. Project Goal:**
+
 To develop a system allowing conversational querying of real-time stock prices, news, and market movers, leveraging the strengths of LLMs for understanding and FastMCP for secure, abstracted data access.
 
 **2.3. Why MCP? (Benefits & Rationale)**
-The Model Context Protocol (MCP) was chosen for the backend interface, aligning with principles often highlighted in MCP introductions (like Phil Schmid's):
-    *   **Standardization:** MCP provides a common "language" (like USB-C for AI) for the frontend agent to interact with backend capabilities, regardless of whether the data comes from Finnhub, Alpha Vantage, or future sources. The agent interacts with consistent MCP tools/resources (`get_price`, `news://...`), not specific vendor APIs.
-    *   **Security:** A primary driver. Sensitive API keys (`FINNHUB_API_KEY`, `ALPHA_VANTAGE_API_KEY`) reside solely on the secure MCP server, never exposed to the UI, the LLM, or the end-user's browser. This is crucial for handling potentially paid API credentials.
-    *   **Abstraction & Decoupling:** The MCP server hides the complexity of calling different financial APIs. The UI/Agent only needs to know the MCP interface. This decoupling allows the backend data sources or fetching logic to change without requiring modifications to the frontend agent, promoting maintainability.
-    *   **Discoverability (Potential):** While not explicitly used by the Langchain agent in this implementation (as tools were predefined), MCP allows clients to dynamically query a server's capabilities (`listTools`, `listResources`), enabling more flexible agent interactions in other scenarios.
-    *   **Control & Ownership:** The owner of the MCP server maintains full control over the exposed tools, data transformations, and API interactions.
+
+The Model Context Protocol (MCP) was chosen for the backend interface, aligning with principles often highlighted in MCP introductions:
+- **Standardization:** MCP provides a common "language"  for the frontend agent to interact with backend capabilities, regardless of whether the data comes from Finnhub, Alpha Vantage, or future sources. The agent interacts with consistent MCP tools/resources (`get_price`, `news://...`), not specific vendor APIs.
+- **Security:** A primary driver. Sensitive API keys (`FINNHUB_API_KEY`, `ALPHA_VANTAGE_API_KEY`) reside solely on the secure MCP server, never exposed to the UI, the LLM, or the end-user's browser. This is crucial for handling potentially paid API credentials.
+- **Abstraction & Decoupling:** The MCP server hides the complexity of calling different financial APIs. The UI/Agent only needs to know the MCP interface. This decoupling allows the backend data sources or fetching logic to change without requiring modifications to the frontend agent, promoting maintainability.
+- **Discoverability (Potential):** While not explicitly used by the Langchain agent in this implementation (as tools were predefined), MCP allows clients to dynamically query a server's capabilities (`listTools`, `listResources`), enabling more flexible agent interactions in other scenarios.
+- **Control & Ownership:** The owner of the MCP server maintains full control over the exposed tools, data transformations, and API interactions.
 
 **2.4. Technology Stack:**
-    *   **Backend Server:** Python 3.10+, FastMCP (`fin_server_v2.py`).
-    *   **Financial Data APIs:** Finnhub, Alpha Vantage.
-    *   **Frontend UI:** Python 3.10+, Streamlit (`finance_assistant_ui.py`).
-    *   **Agent Framework:** Langchain (`langchain`, `langchain-openai`, `langchainhub`).
-    *   **LLM:** OpenAI API (`gpt-4-turbo-preview`) via `langchain-openai`.
-    *   **MCP Client:** `fastmcp.Client`.
-    *   **Supporting:** `httpx`, `python-dotenv`, `pydantic-settings`, `pydantic`, `asyncio`, `openai`.
+- **Backend Server:** Python 3.10+, FastMCP (`fin_server_v2.py`).
+- **Financial Data APIs:** Finnhub, Alpha Vantage.
+- **Frontend UI:** Python 3.10+, Streamlit (`finance_assistant_ui.py`)
+- **Agent Framework:** Langchain (`langchain`, `langchain-openai`, `langchainhub`)
+- **LLM:** OpenAI API (`gpt-4-turbo-preview`) via `langchain-openai`
+- **MCP Client:** `fastmcp.Client`.
+- **Supporting:** `httpx`, `python-dotenv`, `pydantic-settings`, `pydantic`, `asyncio`, `openai`.
 
 **3. System Architecture**
 
 The system utilizes a decoupled client-server architecture orchestrated by the Langchain agent within the Streamlit UI.
-<img src="https://github.com/Pyligent/Finance-Assistant-with-MCP-and-Langchain/raw/main/arch.png" alt="arch" width="1800">
+
 
 <img src="https://github.com/Pyligent/Finance-Assistant-with-MCP-and-Langchain/raw/main/dataflow.jpg" alt="dataflow" width="1800">
 
@@ -136,7 +139,7 @@ The system utilizes a decoupled client-server architecture orchestrated by the L
     ```
     *Explanation:* `@mcp.resource()` registers this as a template. FastMCP extracts `ticker` from the requested URI (`news://ticker/AAPL`) and passes it to the function. Since `ctx` was problematic, standard logging is used. It returns a list of dictionaries, serialized by FastMCP.
 
-**4.2. Streamlit UI (`finance_assistant_ui.py`)**
+**4.2. Streamlit UI (`fin_langchain_v2.py`)**
 
 *   **Langchain Tool Definition (`StructuredTool`):**
     ```python
@@ -191,8 +194,8 @@ The system utilizes a decoupled client-server architecture orchestrated by the L
 
 Based on this project, a reusable pattern emerges for connecting conversational agents to potentially complex or sensitive backend services:
 
-*   **Intent:** Securely expose diverse backend functionalities (APIs, databases, calculations) to an LLM-based conversational agent through a standardized, abstracted interface, without exposing backend implementation details or credentials to the agent or UI.
-*   **Components:**
+-   **Intent:** Securely expose diverse backend functionalities (APIs, databases, calculations) to an LLM-based conversational agent through a standardized, abstracted interface, without exposing backend implementation details or credentials to the agent or UI.
+-   **Components:**
     1.  **Conversational UI:** (e.g., Streamlit, Gradio, Custom Web App) Handles user interaction, displays conversation, manages session state.
     2.  **Agent Orchestrator:** (e.g., Langchain `AgentExecutor`, OpenAI direct tool loop logic) Resides within the UI backend. Receives user input, manages conversation history/memory, interacts with the LLM.
     3.  **LLM:** (e.g., GPT-4, Claude 3) The core reasoning engine. Interprets user intent, selects tools, synthesizes responses based on system prompts and tool results.
@@ -205,9 +208,9 @@ Based on this project, a reusable pattern emerges for connecting conversational 
         *   Contains the core business logic for data fetching and processing.
         *   Manages API keys and credentials securely.
     8.  **Backend Services/APIs:** The actual external data sources or functionalities (e.g., Finnhub, Alpha Vantage, internal databases).
-*   **Interactions:** User -> UI -> Agent Orchestrator -> LLM -> Agent Orchestrator -> Tool Wrapper -> MCP Client -> MCP Server -> Backend Service -> (Return Path).
-*   **Benefits:** Security (keys in backend), Abstraction (agent uses MCP tools, not specific APIs), Modularity (UI, Agent, MCP Server, Backend Services are separate), Maintainability (changes to backend APIs only affect MCP server), Standardization (MCP interface).
-*   **Applicability:** Ideal when building conversational interfaces that need to securely access diverse, potentially sensitive, or complex backend systems/APIs. Suitable when you want to decouple the agent's reasoning logic from the data-fetching implementation.
+-   **Interactions:** User -> UI -> Agent Orchestrator -> LLM -> Agent Orchestrator -> Tool Wrapper -> MCP Client -> MCP Server -> Backend Service -> (Return Path).
+-   **Benefits:** Security (keys in backend), Abstraction (agent uses MCP tools, not specific APIs), Modularity (UI, Agent, MCP Server, Backend Services are separate), Maintainability (changes to backend APIs only affect MCP server), Standardization (MCP interface).
+-   **Applicability:** Ideal when building conversational interfaces that need to securely access diverse, potentially sensitive, or complex backend systems/APIs. Suitable when you want to decouple the agent's reasoning logic from the data-fetching implementation.
 
 **6. Conclusion**
 
