@@ -11,9 +11,9 @@ It features a decoupled architecture:
 *   **Frontend:** A user-friendly web interface built with **Streamlit**.
 *   **Agent:** Powered by **Langchain** and the **OpenAI API** (GPT models) to understand user requests, utilize backend tools, and generate conversational responses.
 
-**Demo GIF (Optional):**
-<!-- ![Demo GIF](link/to/your/demo.gif) -->
-*(Consider adding a short screen recording showing the app in action)*
+**Technical Report:**
+
+(Report)[https://github.com/Pyligent/Finance-Assistant-with-MCP-and-Langchain/blob/main/report.md]
 
 ## Features
 
