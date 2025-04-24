@@ -37,30 +37,11 @@ The Model Context Protocol (MCP) was chosen for the backend interface, aligning 
 The system utilizes a decoupled client-server architecture orchestrated by the Langchain agent within the Streamlit UI.
 
 <img src="https://github.com/Pyligent/Finance-Assistant-with-MCP-and-Langchain/raw/main/dataflow.png" alt="dataflow" width="1800">
+<div style="width: 1800px;">
+  <img src="https://github.com/Pyligent/Finance-Assistant-with-MCP-and-Langchain/raw/main/dataflow.png" alt="dataflow" style="width: 100%;" width="1800" height="938">
+</div>
 
-```
-+-------------------+       +--------------------------+       +-------------------+       +-------------------+       +-----------------+
-| User (Browser)    | ----> | Streamlit UI             | ----> | Langchain         | ----> | Tool Result       | ----> | Langchain       |
-+-------------------+       | (UI State, Agent Invoke) |       | Agent Executor    |       | (Formatted String)|       | Agent Executor  |
-                            +--------------------------+       | (LLM, Tools, Mem) |       +-------------------+       | (LLM Synth)     |
-                                    |        ^                 +-------------------+              |  ^                +-----------------+
-                                    |        |                      |        ^                    |  |                       |
-                                    |(Tool Execution)             |(Tool Choice) (Formatted Result)|                       |(Final Response)
-                                    |        |                      v        |                    |  |                       |
-+--------------------------+        +--------------------------+   +---------------------+        |                       |
-| MCP Client Helper        | ---->  | FastMCP Server           |   | Langchain Tool      | -------+                       |
-| (call_mcp_tool/read_mcp) |        | (fin_server_v2.py)       |   | (_run_get_price...) |                                |
-+--------------------------+        |  - @mcp.tool()           |   +---------------------+                                |
-                                    |  - @mcp.resource()       |        |                                                |
-                                    |  - API Calls (httpx)     |        |(Calls Core Logic)                              |
-                                    +--------------------------+        v                                                |
-                                             |        ^               +---------------------+                             |
-                                             |        |               | Core Logic Func     | ----------------------------+
-                                             v        |               | (_get_price_logic)  |
-                               +--------------+  +--------------+     +---------------------+
-                               | Finnhub API  |  | AlphaVantage |
-                               +--------------+  +--------------+
-```
+
 
 **Flow:**
 
