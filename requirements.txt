@@ -1,0 +1,66 @@
+# requirements.txt
+
+# Core application frameworks
+streamlit==1.33.0
+fastmcp==2.2.1
+
+# LLM and Agent Framework
+langchain==0.1.17
+langchain-openai==0.1.5
+langchain-core==0.1.50
+langchainhub==0.1.15
+openai==1.23.6 # Version compatible with latest langchain components
+
+# MCP Server Dependencies (FastMCP depends on these, listed for clarity)
+mcp==1.6.0
+httpx==0.27.0 # Used by FastMCP, server, UI helpers, openai lib
+python-dotenv==1.0.1 # For loading .env files
+pydantic==2.7.1 # Core validation library used by FastMCP, Langchain, etc.
+pydantic-settings==2.2.1 # For server settings
+
+# Dependencies of Streamlit/Langchain/OpenAI/FastMCP (pulled transitively, listed for info)
+aiohttp==3.9.5 # Often used by async libraries
+aiosignal==1.3.1 # Dependency for aiohttp
+annotated-types==0.6.0 # Dependency for pydantic
+anyio==4.3.0 # Used by FastMCP, httpx, etc.
+attrs==23.2.0 # Dependency for various libraries
+certifi==2024.2.2 # SSL certificates for httpx/requests
+charset-normalizer==3.3.2 # Dependency for requests/httpx
+dataclasses-json==0.6.5 # Dependency for langchain
+frozenlist==1.4.1 # Dependency for aiohttp
+h11==0.14.0 # HTTP/1.1 library for httpx/uvicorn
+httpcore==1.0.5 # Core for httpx
+idna==3.7 # Internationalized domain names for httpx/requests
+jsonpatch==1.33 # Dependency for langchain
+jsonpointer==2.4 # Dependency for jsonpatch
+langsmith==0.1.52 # For Langchain tracing (optional but often included)
+marshmallow==3.21.2 # Dependency for dataclasses-json
+multidict==6.0.5 # Dependency for aiohttp
+mypy-extensions==1.0.0 # Typing extensions dependency
+numpy==1.26.4 # Often a dependency of data/ML libraries (like langchain)
+packaging==24.0 # Dependency for version handling
+protobuf==4.25.3 # Dependency for Streamlit or other libs
+pyarrow==16.0.0 # Streamlit dependency
+pydeck==0.8.1b0 # Streamlit dependency
+pygments==2.17.2 # For rich/code highlighting
+python-dateutil==2.9.0.post0 # Date parsing dependency
+pyyaml==6.0.1 # Langchain dependency
+requests==2.31.0 # Common HTTP library, Langchain dependency
+rich==13.7.1 # Used by FastMCP, Streamlit
+sse-starlette==2.1.0 # Used by FastMCP for SSE transport
+starlette==0.37.2 # Used by FastMCP for SSE transport
+tenacity==8.2.3 # Retrying library, used by langchain/openai
+tiktoken==0.6.0 # Tokenizer for OpenAI
+toml==0.10.2 # Config file parsing
+toolz==0.12.1 # Functional utilities, Streamlit dependency
+tqdm==4.66.2 # Progress bars, used by openai/langchain
+typing-extensions==4.11.0 # Backports for typing module
+typing-inspect==0.9.0 # Used by pydantic
+urllib3==2.2.1 # HTTP client library dependency
+uvicorn==0.29.0 # Used by FastMCP for SSE transport
+watchdog==4.0.0 # File system events, Streamlit dependency
+websockets==12.0 # Used by FastMCP client transports
+yarl==1.9.4 # URL library, dependency for aiohttp
+
+# Note: If you specifically used the fallback create_openai_tool,
+# you might need 'inspect', but it's a built-in module.
