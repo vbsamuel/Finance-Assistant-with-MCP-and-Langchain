@@ -35,11 +35,9 @@ The Model Context Protocol (MCP) was chosen for the backend interface, aligning 
 **3. System Architecture**
 
 The system utilizes a decoupled client-server architecture orchestrated by the Langchain agent within the Streamlit UI.
+<img src="https://github.com/Pyligent/Finance-Assistant-with-MCP-and-Langchain/raw/main/arch.png" alt="arch" width="1800">
 
 <img src="https://github.com/Pyligent/Finance-Assistant-with-MCP-and-Langchain/raw/main/dataflow.png" alt="dataflow" width="1800">
-<div style="width: 1800px;">
-  <img src="https://github.com/Pyligent/Finance-Assistant-with-MCP-and-Langchain/raw/main/dataflow.png" alt="dataflow" style="width: 200%;" width="2000" height="600">
-</div>
 
 
 
