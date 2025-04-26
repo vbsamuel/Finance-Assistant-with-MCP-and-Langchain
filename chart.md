@@ -12,7 +12,7 @@ sequenceDiagram
     participant MS as MCP Server
     participant BS as Backend Services/APIs
 
-    U->>UI: Query (e.g., "Price of AAPL?")
+    U->>UI: User Query
     UI->>AO: Forward Query
     AO->>LLM: Send Query, History, Tool Definitions
     LLM-->>AO: Select Tool (e.g., get_price)
